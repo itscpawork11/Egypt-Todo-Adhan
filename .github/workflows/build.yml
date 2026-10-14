@@ -13,31 +13,37 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Check Repository Structure
+        run: |
+          echo "=== محتويات المستودع الحالية ==="
+          ls -la
+          echo "=================================="
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # تثبيت الـ Gradle Wrapper تلقائياً في السيرفر في حال لم يتم رفعه
+      # تثبيت أداة Gradle الرسمية
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: true # تعطيل الكاش مؤقتاً لتجنب خطأ 400
 
-      - name: Ensure Gradle Wrapper Exists
+      # كشف ملفات Gradle وتشغيل البناء
+      - name: Build APK
         run: |
+          # التأكد من وجود wrapper أو توليده
           if [ ! -f "./gradlew" ]; then
             gradle wrapper
           fi
           chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace --no-daemon
 
-      # بناء ملف الـ APK
-      - name: Build APK with Gradle Wrapper
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
-
-      # رفع ملف الـ APK النهائي
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
