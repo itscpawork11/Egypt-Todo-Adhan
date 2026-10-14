@@ -13,37 +13,48 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Check Repository Structure
-        run: |
-          echo "=== محتويات المستودع الحالية ==="
-          ls -la
-          echo "=================================="
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # تثبيت أداة Gradle الرسمية
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-disabled: true # تعطيل الكاش مؤقتاً لتجنب خطأ 400
+          cache-disabled: true
 
-      # كشف ملفات Gradle وتشغيل البناء
+      # كشف المجلد الحقيقي للمشروع والبناء من داخله تلقائياً
       - name: Build APK
+        id: build
         run: |
-          # التأكد من وجود wrapper أو توليده
+          BUILD_DIR=$(find . -maxdepth 4 -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' \) -print -quit | xargs -n1 dirname || true)
+          
+          if [ -z "$BUILD_DIR" ]; then
+            echo "لم يتم العثور على settings.gradle، جاري البحث عن build.gradle..."
+            BUILD_DIR=$(find . -maxdepth 4 -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' \) -print -quit | xargs -n1 dirname || true)
+          fi
+
+          if [ -z "$BUILD_DIR" ]; then
+            echo "خطأ: لم يتم العثور على أي ملفات Gradle في المستودع!"
+            ls -la
+            exit 1
+          fi
+
+          echo "تم العثور على المشروع داخل المجلد: $BUILD_DIR"
+          echo "build_dir=$BUILD_DIR" >> $GITHUB_OUTPUT
+          
+          cd "$BUILD_DIR"
           if [ ! -f "./gradlew" ]; then
             gradle wrapper
           fi
-          chmod +x gradlew
+          chmod +x ./gradlew
           ./gradlew assembleDebug --stacktrace --no-daemon
 
+      # رفع ملف الـ APK النهائي للتحميل
       - name: Upload APK
         uses: actions/upload-artifact@v4
         if: success()
         with:
           name: app-debug-apk
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: ${{ steps.build.outputs.build_dir }}/**/build/outputs/apk/debug/*.apk
