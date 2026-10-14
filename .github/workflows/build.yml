@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً بضغطة زر
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,21 +18,26 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew || true
+      # تثبيت الـ Gradle Wrapper تلقائياً في السيرفر في حال لم يتم رفعه
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Build with Gradle
+      - name: Ensure Gradle Wrapper Exists
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --stacktrace
-          else
-            gradle assembleDebug --stacktrace
+          if [ ! -f "./gradlew" ]; then
+            gradle wrapper
           fi
+          chmod +x gradlew
 
+      # بناء ملف الـ APK
+      - name: Build APK with Gradle Wrapper
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      # رفع ملف الـ APK النهائي
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
