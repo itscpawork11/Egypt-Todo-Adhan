@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Destination: app/src/main/AndroidManifest.xml
+
+    Offline-first prayer-times application.
+    This manifest declares NO INTERNET permission: the app is 100% offline
+    (Adhan times are computed locally with Adhan-Java, data is stored in Room).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ============================================================= -->
+    <!-- Offline / notification / alarm permissions                    -->
+    <!-- ============================================================= -->
+
+    <!-- Runtime notification permission (Android 13+, API 33+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Schedule exact alarms (Android 12+ user-granted, revocable). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- Exact-alarm capability for apps whose core function is alarms.
+         Auto-granted; the app is an alarm-type application (prayer times). -->
+    <uses-permission
+        android:name="android.permission.USE_EXACT_ALARM"
+        tools:targetApi="tiramisu" />
+
+    <!-- Re-arm all alarms after device reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Foreground service (Adhan audio playback). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Foreground service type required on Android 14+ (API 34). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Full-screen Adhan notification on the lock screen (API 34+ gated). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- Keep the CPU alive while the Adhan audio/notification is active. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Vibration patterns for the Adhan alert. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Allows the app to ask the user to exclude it from battery optimization.
+         Without this declaration the ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+         dialog is never shown and the request fails with a SecurityException. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- ============================================================= -->
+    <!-- Package visibility (Android 11+ / API 30+)                     -->
+    <!-- ============================================================= -->
+    <!-- OEM autostart / background-launch settings screens. Package
+         visibility filtering hides these packages from resolveActivity()
+         unless they are declared here, which would silently disable every
+         manufacturer-specific autostart shortcut. -->
+    <queries>
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.samsung.android.lool" />
+        <package android:name="com.samsung.android.sm" />
+        <package android:name="com.coloros.safecenter" />
+        <package android:name="com.oppo.safe" />
+        <package android:name="com.oneplus.security" />
+        <package android:name="com.vivo.permissionmanager" />
+        <package android:name="com.iqoo.secure" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.asus.mobilemanager" />
+        <package android:name="com.letv.android.letvsafe" />
+        <package android:name="com.transsion.phonemanager" />
+        <package android:name="com.transsion.phonemaster" />
+    </queries>
+
+    <!-- ============================================================= -->
+    <!-- Application                                                    -->
+    <!-- ============================================================= -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.OfflinePrayerTimes"
+        android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="34">
+
+        <!-- ========================================================= -->
+        <!-- MainActivity - single-activity Compose host (Entry point)  -->
+        <!-- ========================================================= -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:theme="@style/Theme.OfflinePrayerTimes">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ========================================================= -->
+        <!-- AdhanAudioService - foreground service for Adhan playback  -->
+        <!-- ========================================================= -->
+        <service
+            android:name=".core.service.AdhanAudioService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
+
+        <!-- ========================================================= -->
+        <!-- AlarmReceiver - fires at each prayer time                  -->
+        <!-- ========================================================= -->
+        <receiver
+            android:name=".core.alarm.AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- ========================================================= -->
+        <!-- BootReceiver - restores/rea-arms alarms after reboot       -->
+        <!-- ========================================================= -->
+        <receiver
+            android:name=".core.alarm.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

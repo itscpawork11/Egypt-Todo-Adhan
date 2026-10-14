@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Destination: app/src/main/res/xml/backup_rules.xml -->
+<full-backup-content>
+    <!-- Backup is disabled at the application level (allowBackup="false"). -->
+</full-backup-content>

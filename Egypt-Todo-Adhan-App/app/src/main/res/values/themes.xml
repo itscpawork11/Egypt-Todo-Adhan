@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Destination: app/src/main/res/values/themes.xml
+
+    Minimal framework theme used by MainActivity before Compose takes over.
+    The framework Material theme is used so the app does not need the
+    AppCompat / Material Components XML libraries (UI is 100% Compose).
+-->
+<resources>
+    <style name="Theme.OfflinePrayerTimes" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
